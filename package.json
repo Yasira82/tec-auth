@@ -1,0 +1,42 @@
+{
+  "name": "@tec/auth",
+  "version": "1.0.0",
+  "description": "TEC Ecosystem — Shared Auth Layer (Pi SSO + JWT + Cookies + Middleware)",
+  "private": false,
+  "main":    "./dist/index.js",
+  "module":  "./dist/index.mjs",
+  "types":   "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import":  "./dist/index.mjs",
+      "types":   "./dist/index.d.ts"
+    },
+    "./middleware": {
+      "require": "./dist/middleware/index.js",
+      "import":  "./dist/middleware/index.mjs",
+      "types":   "./dist/middleware/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build":      "tsup",
+    "dev":        "tsup --watch",
+    "typecheck":  "tsc --noEmit",
+    "test":       "vitest run",
+    "prepublish": "npm run build"
+  },
+  "peerDependencies": {
+    "next":      ">=15.0.0",
+    "react":     ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node":     "^20.0.0",
+    "@types/react":    "^18.0.0",
+    "tsup":            "^8.0.0",
+    "typescript":      "^5.0.0",
+    "vitest":          "^4.0.0"
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "license": "MIT"
+}
