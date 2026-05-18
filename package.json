@@ -1,5 +1,5 @@
 {
-  "name": "@tec/auth",
+  "name": "@yasser172/tec-auth"
   "version": "1.0.0",
   "description": "TEC Ecosystem — Shared Auth Layer (Pi SSO + JWT + Cookies + Middleware)",
   "private": false,
