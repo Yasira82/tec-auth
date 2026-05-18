@@ -1,5 +1,5 @@
 {
-  "name": "@yasser172/tec-auth"
+  "name": "@yasser172/tec-auth",
   "version": "1.0.0",
   "description": "TEC Ecosystem — Shared Auth Layer (Pi SSO + JWT + Cookies + Middleware)",
   "private": false,
@@ -31,11 +31,11 @@
     "react-dom": ">=18.0.0"
   },
   "devDependencies": {
-    "@types/node":     "^20.0.0",
-    "@types/react":    "^18.0.0",
-    "tsup":            "^8.0.0",
-    "typescript":      "^5.0.0",
-    "vitest":          "^4.0.0"
+    "@types/node":  "^20.0.0",
+    "@types/react": "^18.0.0",
+    "tsup":         "^8.0.0",
+    "typescript":   "^5.0.0",
+    "vitest":       "^4.0.0"
   },
   "files": ["dist", "README.md", "LICENSE"],
   "license": "MIT"
