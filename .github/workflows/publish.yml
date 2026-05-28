@@ -1,17 +1,17 @@
-name: Publish
+name: CI
 
 on:
   push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
-  publish:
-    name: Build & Publish @tec/auth
+  lint-and-test:
+    name: Lint & Test (@yasser172/tec-auth)
     runs-on: ubuntu-latest
 
     steps:
@@ -20,15 +20,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Install
-        run: npm install
+        run: npm install --legacy-peer-deps
 
-      - name: Build
-        run: npm run build
+      - name: Typecheck
+        run: npm run typecheck
 
-      - name: Publish
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Test & Coverage
+        run: npm run test
