@@ -22,7 +22,7 @@
     "build":      "tsup",
     "dev":        "tsup --watch",
     "typecheck":  "tsc --noEmit",
-    "test":       "vitest run",
+    "test":       "vitest run --coverage",
     "prepublish": "npm run build"
   },
   "peerDependencies": {
@@ -31,11 +31,14 @@
     "react-dom": ">=18.0.0"
   },
   "devDependencies": {
-    "@types/node":  "^20.0.0",
-    "@types/react": "^18.0.0",
-    "tsup":         "^8.0.0",
-    "typescript":   "^5.0.0",
-    "vitest":       "^4.0.0"
+    "@types/node":          "^20.0.0",
+    "@types/react":         "^18.0.0",
+    "@vitest/coverage-v8":  "^4.0.0",
+    "happy-dom":            "^17.0.0",
+    "next":                 "^15.0.0",
+    "tsup":                 "^8.0.0",
+    "typescript":           "^5.0.0",
+    "vitest":               "^4.0.0"
   },
   "files": ["dist", "README.md", "LICENSE"],
   "license": "MIT"
