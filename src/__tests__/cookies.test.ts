@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// ── Setup DOM environment ──────────────────────────────────
+// ── Setup DOM environment ──────────────────────────
 const setupCookies = (cookies: string) => {
   Object.defineProperty(document, 'cookie', {
     get:        () => cookies,
@@ -85,5 +85,34 @@ describe('hasValidSession', () => {
     const { hasValidSession } = await import('../client/cookies');
     setupCookies('tec_access_token=   ');
     expect(hasValidSession()).toBe(false);
+  });
+});
+
+describe('getAccessToken — error handling', () => {
+  it('returns null when document.cookie throws', async () => {
+    vi.resetModules();
+    Object.defineProperty(document, 'cookie', {
+      get: () => { throw new Error('Cookie access denied'); },
+      configurable: true,
+    });
+    const { getAccessToken } = await import('../client/cookies');
+    expect(getAccessToken()).toBeNull();
+  });
+});
+
+describe('getStoredUser — edge cases', () => {
+  it('returns null when cookie value is empty string', async () => {
+    vi.resetModules();
+    const { getStoredUser } = await import('../client/cookies');
+    setupCookies('tec_user=');
+    expect(getStoredUser()).toBeNull();
+  });
+
+  it('handles deeply nested user object', async () => {
+    vi.resetModules();
+    const { getStoredUser } = await import('../client/cookies');
+    const user = { id: 'u-1', piUsername: 'alice', roles: ['merchant', 'user'] };
+    setupCookies(`tec_user=${encodeURIComponent(JSON.stringify(user))}`);
+    expect(getStoredUser()).toEqual(user);
   });
 });

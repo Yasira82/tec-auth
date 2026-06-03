@@ -103,3 +103,45 @@ describe('logout', () => {
     await expect(logout()).resolves.toBeUndefined();
   });
 });
+
+describe('refreshAccessToken — concurrent calls', () => {
+  it('queues concurrent refresh calls and resolves them together', async () => {
+    vi.resetModules();
+
+    let resolveFirst!: () => void;
+    const firstStarted = new Promise<void>(res => { resolveFirst = res; });
+
+    mockFetch
+      .mockImplementationOnce(() => {
+        resolveFirst();
+        return new Promise(res =>
+          setTimeout(() => res({ ok: true, json: async () => ({ token: 'shared-token' }) }), 10)
+        );
+      });
+
+    const { refreshAccessToken } = await import('../client/refresh');
+
+    const [first, second] = await Promise.all([
+      refreshAccessToken(),
+      firstStarted.then(() => refreshAccessToken()),
+    ]);
+
+    expect(first).toBe('shared-token');
+    expect(second).toBe('shared-token');
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('fetchWithAuth — logoutFn on 401 refresh failure', () => {
+  it('calls logoutFn when refresh fails on 401', async () => {
+    vi.resetModules();
+    const logoutFn = vi.fn().mockResolvedValue(undefined);
+    mockFetch
+      .mockResolvedValueOnce({ ok: false, status: 401 })
+      .mockResolvedValueOnce({ ok: false, json: async () => ({}) });
+    const { fetchWithAuth } = await import('../client/refresh');
+    const res = await fetchWithAuth('/api/data', {}, logoutFn);
+    expect(res.status).toBe(401);
+    expect(logoutFn).toHaveBeenCalledTimes(1);
+  });
+});
