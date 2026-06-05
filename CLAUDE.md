@@ -6,7 +6,22 @@ Shared authentication layer for the TEC Federated Platform.
 Provides Pi SSO hooks, cookie parsing, middleware, and session utilities
 for all TEC Next.js apps (Hub, Ecommerce, Assets, Commerce).
 
-**P1 Violation NEW-D: Zero tests. Writing tests is the top priority in this repo.**
+**Test coverage is the top priority — NEVER ship without tests.**
+
+---
+
+## Package vs Service Distinction
+
+```
+@yasser172/tec-auth  (THIS REPO)  = npm package
+  → cookie parsing, SSO hooks, middleware helpers
+  → consumed by ALL TEC frontend apps
+  → tests target: ≥ 80% (SEPARATE from service)
+
+tec-auth-service  (tec-core-backend) = backend microservice
+  → Pi identity verification, JWT issuance
+  → ✅ NEW-D CLOSED — 95% stmt / 92.98% branch coverage
+```
 
 ---
 
@@ -38,6 +53,31 @@ usePiAuth()         // React hook: { user, token, isAuth, loading }
 
 ---
 
+## Kernel Spec — Auth Invariants (C-47)
+
+### Auth-Specific Invariants
+```
+1. Identity always resolves to ONE principal (never ambiguous)
+2. Session JWT must be verified — NEVER decoded without verification
+3. No state mutation without actor context (auth ops = sensitive)
+4. Every auth action (login/logout/refresh) has audit trail
+5. Fail Closed (P6): missing or invalid session → deny by default
+```
+
+### Consistency Requirement
+```
+Identity reads = STRONG consistency (Principal must always resolve correctly)
+Auth state changes = synchronous — NEVER eventual consistency
+```
+
+### Sensitive Operations (ActorContext REQUIRED)
+```
+login, logout, refresh, token issuance
+→ Missing ActorContext on these → REJECT (P6)
+```
+
+---
+
 ## Auth Pattern (ADR-001 + ADR-006)
 
 ```
@@ -49,27 +89,26 @@ Hub.tecosystem.app login
 
 ---
 
-## Active P1 Violation
+## Required Test Coverage
 
-| ID | Severity | Description | Priority |
-|----|----------|-------------|----------|
-| NEW-D | CRITICAL | Zero tests in the auth layer | **FIX FIRST** |
+| Function | Scenarios to cover |
+|----------|-------------------|
+| `getStoredUser()` | null cookie, malformed JSON, valid JSON, missing fields |
+| `getAccessToken()` | missing cookie, expired token format, valid token |
+| `ssoRedirect()` | URL construction with/without return_url |
+| `usePiAuth()` | loading → authenticated → unauthenticated transitions |
+| Middleware | protected route blocked, public route allowed, cookie forwarding |
 
-### Required Test Coverage
-1. `getStoredUser()` — null cookie, malformed JSON, valid JSON, missing fields
-2. `getAccessToken()` — missing cookie, expired token format, valid token
-3. `ssoRedirect()` — redirect URL construction with/without return_url
-4. `usePiAuth()` — hook states: loading → authenticated → unauthenticated
-5. Middleware — protected route blocked, public route allowed, cookie forwarding
+**Target: ≥ 80% coverage. No PR merges without test evidence.**
 
 ---
 
 ## Development Commands
 
 ```bash
-npm run build       # tsup build → dist/
-npx vitest          # Run tests (TARGET: 80%+ coverage before any new feature)
-npm run type-check  # TypeScript strict check
+npm run build              # tsup build → dist/
+npx vitest --coverage      # Run tests with coverage report
+npm run type-check         # TypeScript strict check
 ```
 
 ---
@@ -81,6 +120,8 @@ npm run type-check  # TypeScript strict check
 - Do NOT add app-specific auth logic — keep all exports generic
 - Do NOT ship any change to this package without tests
 - Do NOT bypass cookie reading with direct API calls
+- Do NOT rename cookie names (`tec_access_token`, `tec_csrf`, `tec_user`) — LOCKED
+- Do NOT decode JWT without verification (`jwt.decode()` is FORBIDDEN — Policy CI blocks it)
 
 ---
 
@@ -94,8 +135,79 @@ refactor:     no behavior change
 chore:        build/config
 ```
 
+---
+
+## Platform Orchestra — This Repo
+
+**Role:** Auth Package (npm) — trust backbone consumed by ALL TEC frontend apps
+**Consumers:** tec-app (Hub) · tec-ecommerce · tec-assets · tec-commerce
+**Layer:** Platform-wide — breakage here = platform-wide incident
+
+```
+tec-app, tec-ecommerce, tec-assets, tec-commerce
+  → import @yasser172/tec-auth
+      → getStoredUser(), getAccessToken() → reads Hub-set cookies
+      → ssoRedirect() → bounces to Hub login
+      → usePiAuth() → React hook for auth state
+```
+
+---
+
+## Commercial Targets
+
+- Test coverage ≥ 80% before any new capability ships
+- Zero silent regressions — failure scenarios must be tested
+- Cookie contract with Hub: LOCKED — any change requires coordinated deploy across ALL apps
+- ssoRedirect must always point to `hub.tecosystem.app/login?return_url=...`
+
+---
+
+## Risk Register
+
+| # | Risk | Severity | Mitigation |
+|---|------|----------|------------|
+| R1 | Silent regression in `getStoredUser()` | P0 | Test: null, malformed, missing fields — ALL edge cases |
+| R2 | `ssoRedirect` wrong URL format | P1 | Test with/without return_url — exact URL assertion |
+| R3 | `usePiAuth` state leak between renders | P1 | Test loading → auth → unauth transitions |
+| R4 | Ship without tests | P0 | BLOCKED — CI must show coverage before merge |
+| R5 | Cookie name renamed (breaks all apps) | P0 | LOCKED — coordinate across all 4 apps |
+
+---
+
+## Platform Governance
+
+### SHARED — Platform defines, this package implements
+- Cookie names: `tec_access_token`, `tec_csrf`, `tec_user` — LOCKED, never rename
+- SSO redirect target: Hub ONLY — `hub.tecosystem.app/login?return_url=...`
+- Auth storage: HttpOnly cookies ONLY — never localStorage (ADR-001)
+- Token validation: NEVER in this package — always via tec-auth-service
+
+### SOVEREIGN — This package owns
+- Hook API surface (`usePiAuth`, `useSession`)
+- Cookie parsing implementation
+- TypeScript types (`User`, `Session`, `AuthState`, `TecClaims`)
+- Middleware helper implementation
+
+---
+
+## Release Gate Protocol
+
+```bash
+npx vitest --coverage   # ≥ 80% — HARD BLOCK if below
+npm run type-check      # 0 errors
+npm run build           # clean dist/ output
+git status              # clean
+git fetch origin claude/ecommerce-engineering-review-EuiQO
+git rebase origin/claude/ecommerce-engineering-review-EuiQO
+```
+
+**Non-negotiable:** Zero coverage = zero ship.
+
+---
+
 ## Platform Context
 
 Full platform context, ADR system, and engineering roadmap:
 → `TEC_MODELS_PAT.prompt.yml` in yasira82/tec-app (branch: claude/ecommerce-engineering-review-EuiQO)
 → `TEC_Ecosystem_AI_Key.prompt.yml` in yasira82/tec-app
+→ C-47 Kernel Spec — P6 Fail Closed, Auth Invariants
