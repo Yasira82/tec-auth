@@ -122,6 +122,9 @@ npm run type-check         # TypeScript strict check
 - Do NOT bypass cookie reading with direct API calls
 - Do NOT rename cookie names (`tec_access_token`, `tec_csrf`, `tec_user`) — LOCKED
 - Do NOT decode JWT without verification (`jwt.decode()` is FORBIDDEN — Policy CI blocks it)
+- Do NOT call `getStoredUser()` or `getAccessToken()` in Server Components or API Routes — client-only
+- Do NOT confuse Pi token with TEC JWT — they are issued by different systems for different APIs
+- Do NOT add any new exported function without tests — coverage ≥ 80% is a hard CI block
 
 ---
 
@@ -159,6 +162,52 @@ tec-app, tec-ecommerce, tec-assets, tec-commerce
 - Zero silent regressions — failure scenarios must be tested
 - Cookie contract with Hub: LOCKED — any change requires coordinated deploy across ALL apps
 - ssoRedirect must always point to `hub.tecosystem.app/login?return_url=...`
+
+---
+
+## Common Debug Patterns
+
+### "getStoredUser() returns null despite user being logged in"
+```
+Symptom: usePiAuth() shows isAuth=false, user=null, but Hub shows user logged in.
+Cause A: tec_user cookie not set or expired on this domain (domain mismatch).
+Cause B: Cookie value is malformed JSON — encoding issue during Hub login.
+Cause C: getStoredUser() called server-side — document not available in Node.js.
+Fix A:   Hub must set tec_user cookie on correct domain. Check in DevTools > Application > Cookies.
+Fix B:   getStoredUser() wraps JSON.parse in try-catch — check raw cookie value.
+Fix C:   This function is CLIENT-ONLY. Never call in Server Components or API routes.
+```
+
+### "SSO redirect loop — app keeps redirecting to Hub login"
+```
+Symptom: User completes Hub login, immediately redirected back to login screen.
+Cause A: return_url not preserved — ssoRedirect() called without current URL.
+Cause B: tec_access_token cookie not set after Hub login (CORS or domain mismatch).
+Fix:     Always call: ssoRedirect(window.location.href)
+         After Hub login, verify tec_access_token in DevTools > Application > Cookies.
+         Cookie domain must match app's domain (tecosystem.app or subdomain).
+```
+
+### "CI coverage drops below 80% — PR blocked"
+```
+Symptom: PR fails: "Coverage X% — below 80% threshold. Hard block."
+Cause:   New function added without tests, or existing test file removed.
+Fix:     Coverage is a HARD BLOCK — pipeline fails, cannot merge.
+         Run: npx vitest --coverage — look for uncovered lines.
+         Priority: getStoredUser() null/malformed/missing scenarios.
+         Commit order: test(auth) FIRST, then feat(auth).
+```
+
+### "Token appears valid but gateway returns 401"
+```
+Symptom: Authorization header has a token, but gateway or auth-service returns 401.
+Cause A: Pi token used instead of TEC JWT — different formats, different issuers.
+Cause B: TEC JWT expired — getAccessToken() returns stale cookie value.
+Cause C: jwt.decode() used somewhere — FORBIDDEN, Policy CI should block it.
+Fix:     TEC JWT = tec_access_token cookie (issued by tec-auth-service).
+         Pi token = from Pi.authenticate() — NEVER use for TEC internal APIs.
+         On 401: trigger SSO refresh via /api/auth/refresh endpoint.
+```
 
 ---
 
