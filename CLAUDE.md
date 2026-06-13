@@ -212,50 +212,21 @@ Full platform context, ADR system, and engineering roadmap:
 → `TEC_Ecosystem_AI_Key.prompt.yml` in yasira82/tec-app
 → C-47 Kernel Spec — P6 Fail Closed, Auth Invariants
 
+
 ---
 
-## Dynamic Orchestration
+## Skills
 
-### Ecosystem Role
-**Trust Backbone** — authentication package consumed by ALL 4 apps. Cookie names are the platform-wide identity contract. Any breakage = platform-wide auth failure.
+Available via plugin — invoke automatically when the situation matches:
 
-### Dependency Map
-
-| Direction | Repos / Services |
-|-----------|------------------|
-| Upstream | None — reads Hub-set cookies (set by tec-app Hub SSO flow) |
-| Downstream | `tec-app` · `tec-ecommerce` · `tec-assets` · `tec-commerce` — ALL simultaneously |
-
-### Cross-Repo Workflow Triggers
-
-| Event | Coordinate With | Required Action |
-|-------|----------------|------------------|
-| Cookie name change | tec-app, tec-ecommerce, tec-assets, tec-commerce | PLATFORM-WIDE — coordinate ALL 5 repos before any change |
-| `usePiAuth()` behavior change | All 4 consumer apps | Test all apps — auth state affects every page |
-| `ssoRedirect()` URL format change | tec-app (Hub) | Hub login URL must match redirect target |
-| `getStoredUser()` return shape change | All 4 consumer apps | Breaking — semver major bump required |
-| Coverage drops below 80% | None — BLOCK the PR | Zero ship without test coverage |
-| New export added | All 4 consumer apps | Non-breaking — minor semver bump |
-
-### Release Chain Position
-
-```
-tec-core-backend (deploy)
-  → tec-sdk (npm publish)
-    → tec-auth (npm publish)  ← HERE (publish SECOND — after tec-sdk, before tec-ui)
-      → tec-ui (npm publish)
-        → ALL 4 apps (simultaneous)
-```
-
-### Orchestration Rules
-- Cookie names (`tec_access_token`, `tec_csrf`, `tec_user`) = LOCKED — requires ADR + all-repo coordination to change
-- 80% test coverage = hard gate — never publish below threshold
-- `jwt.decode()` FORBIDDEN — Policy CI blocks it — only `jwt.verify()`
-- This package has no knowledge of tec-auth-service (backend) — it only reads Hub-set cookies
-
-### Knowledge Base Reference
-→ `yasira82/tec-knowledge-base` (branch: `claude/gifted-knuth-1yhom3`)
-→ Master index: `knowledge-base/C-57___MASTER_CONTENTS_INDEX.md`
-→ ADR system (ADR-001 SSO): `knowledge-base/C-64___ADR_SYSTEM.md`
-→ Frontend state governance: `knowledge-base/C-72___FRONTEND_STATE_GOVERNANCE.md`
-→ Release governance: `knowledge-base/C-75___RELEASE_GOVERNANCE_SPEC.md`
+| Situation | Skill |
+|-----------|-------|
+| Writing new feature or fixing a bug → use TDD | `/tdd` |
+| Bug, regression, or unexpected behavior | `/diagnose` |
+| Writing or modifying tests | `/test-guard` |
+| Writing or modifying BFF routes, payment handlers, or API contracts | `/clean-code-guard` |
+| Updating docs, CLAUDE.md, or knowledge-base entries | `/docs-guard` |
+| Planning a new feature or architectural decision | `/grill-with-docs` |
+| Breaking down a roadmap item into GitHub Issues | `/to-issues` |
+| Session is getting long or context is filling up | `/handoff` |
+| Adding pre-commit hooks to this repo | `/setup-pre-commit` |
