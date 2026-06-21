@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createAuthMiddleware } from '../middleware/index';
+import { createAuthMiddleware, isTrustedCsrf } from '../middleware/index';
 import { NextRequest } from 'next/server';
 
 // ── Helpers ────────────────────────────────────────────────
@@ -161,6 +161,75 @@ describe('createAuthMiddleware — CSRF Protection', () => {
     const req = makeReq('/api/auth/logout', 'POST');
     const res = middleware(req);
     expect(res.status).toBe(403);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+describe('createAuthMiddleware — CSRF first-party Origin fallback', () => {
+  const middleware = createAuthMiddleware({
+    protectedRoutes:    [],
+    csrfProtectedPaths: ['/api/payment'],
+  });
+
+  it('allows POST with NO csrf cookie/header when Origin is a *.tecosystem.app host (Pi Browser case)', () => {
+    // sameSite=None cookie dropped in Pi Browser → double-submit fails, Origin saves it
+    const req = makeReq('/api/payment/create', 'POST', {}, {
+      origin: 'https://ecommerce.tecosystem.app',
+    });
+    const res = middleware(req);
+    expect(res.status).toBe(200);
+  });
+
+  it('allows POST when Origin host === Host', () => {
+    const req = makeReq('/api/payment/create', 'POST', {}, {
+      origin: 'https://my-app.example.com',
+      host:   'my-app.example.com',
+    });
+    const res = middleware(req);
+    expect(res.status).toBe(200);
+  });
+
+  it('blocks POST from a cross-site Origin with no matching CSRF token', () => {
+    const req = makeReq('/api/payment/create', 'POST', {}, {
+      origin: 'https://evil.example.com',
+    });
+    const res = middleware(req);
+    expect(res.status).toBe(403);
+  });
+
+  it('blocks a malformed Origin with no CSRF token', () => {
+    const req = makeReq('/api/payment/create', 'POST', {}, { origin: 'not-a-url' });
+    const res = middleware(req);
+    expect(res.status).toBe(403);
+  });
+
+  it('trustedOriginSuffix="" disables the suffix path (only same-origin / token)', () => {
+    const mw  = createAuthMiddleware({
+      protectedRoutes: [], csrfProtectedPaths: ['/api/payment'], trustedOriginSuffix: '',
+    });
+    const req = makeReq('/api/payment/create', 'POST', {}, {
+      origin: 'https://ecommerce.tecosystem.app',
+    });
+    expect(mw(req).status).toBe(403);
+  });
+
+  it('still allows matching double-submit token (no Origin)', () => {
+    const csrf = 'tok-123';
+    const req  = makeReq('/api/payment/create', 'POST', { tec_csrf: csrf }, { 'x-csrf-token': csrf });
+    expect(middleware(req).status).toBe(200);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+describe('isTrustedCsrf — direct unit', () => {
+  it('returns false when neither token nor Origin present', () => {
+    const req = makeReq('/api/payment', 'POST');
+    expect(isTrustedCsrf(req)).toBe(false);
+  });
+
+  it('returns true for a *.tecosystem.app Origin', () => {
+    const req = makeReq('/api/payment', 'POST', {}, { origin: 'https://assets.tecosystem.app' });
+    expect(isTrustedCsrf(req)).toBe(true);
   });
 });
 

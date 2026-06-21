@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, 'claude/**']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    name: Typecheck (@yasser172/tec-auth)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --legacy-peer-deps
+      - run: npm run typecheck
+
+  test:
+    name: Test & Coverage (≥80%)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --legacy-peer-deps
+      - name: Test & Coverage
+        run: npm run test   # vitest run --coverage — fails if below the 80% thresholds
+
+  build:
+    name: Build (tsup → dist)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --legacy-peer-deps
+      - name: Build
+        run: npm run build
+      - name: Verify dist output exists
+        run: test -f dist/index.js && test -f dist/index.d.ts && echo "dist OK"
