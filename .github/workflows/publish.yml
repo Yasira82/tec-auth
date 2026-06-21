@@ -1,31 +1,34 @@
-name: CI
+name: Publish
 
+# Publishes @yasser172/tec-auth to npm when a GitHub Release is published.
+# Requires repo secret NPM_TOKEN (npm automation token with publish rights).
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  lint-and-test:
-    name: Lint & Test (@yasser172/tec-auth)
+  publish:
+    name: Publish to npm
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
 
-      - name: Install
-        run: npm install --legacy-peer-deps
+      - run: npm install --legacy-peer-deps
 
-      - name: Typecheck
-        run: npm run typecheck
+      # Gate publish on the same quality bars as CI.
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build   # also runs via prepublishOnly safety net
 
-      - name: Test & Coverage
-        run: npm run test
+      - name: Publish
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
