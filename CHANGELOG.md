@@ -3,6 +3,18 @@
 All notable changes to `@yasser172/tec-auth` are documented here.
 This package follows semantic versioning.
 
+## [1.1.1] — 2026-06-26
+
+### Added
+- Proper README (was empty on npm); LICENSE (MIT) file; CHANGELOG in published files.
+- `engines` (node ≥20), `sideEffects: false` metadata.
+- npm publish provenance (`--provenance` + `id-token: write`).
+- Dependabot config (npm + github-actions, weekly).
+
+### Changed
+- `tsconfig`: enabled `noUncheckedIndexedAccess`; guarded `timingSafeStringEqual`
+  index access (behavior-identical).
+
 ## [1.1.0] — 2026-06-22
 
 ### Fixed (platform CSRF correctness — the headline change)

@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write   # npm provenance (supply-chain attestation)
 
 jobs:
   publish:
@@ -29,6 +30,6 @@ jobs:
       - run: npm run build   # also runs via prepublishOnly safety net
 
       - name: Publish
-        run: npm publish --access public
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
