@@ -1,8 +1,15 @@
 name: Publish
 
-# Publishes @yasser172/tec-auth to npm when a GitHub Release is published.
+# Publishes @yasser172/tec-auth to npm on merge to main (version-guarded),
+# on a GitHub Release, or via manual dispatch.
 # Requires repo secret NPM_TOKEN (npm automation token with publish rights).
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - '.github/workflows/publish.yml'
   release:
     types: [published]
   workflow_dispatch:
@@ -30,6 +37,14 @@ jobs:
       - run: npm run build   # also runs via prepublishOnly safety net
 
       - name: Publish
-        run: npm publish --access public --provenance
+        run: |
+          PUBLISHED=$(npm view @yasser172/tec-auth version 2>/dev/null || echo "0.0.0")
+          CURRENT=$(node -p "require('./package.json').version")
+          if [ "$PUBLISHED" = "$CURRENT" ]; then
+            echo "✅ Version $CURRENT already published — skipping"
+            exit 0
+          fi
+          echo "📦 Publishing @yasser172/tec-auth@$CURRENT..."
+          npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
