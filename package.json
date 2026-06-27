@@ -2,6 +2,14 @@
   "name": "@yasser172/tec-auth",
   "version": "1.1.1",
   "description": "TEC Ecosystem — Shared Auth Layer (Pi SSO + JWT + Cookies + Middleware)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yasira82/tec-auth.git"
+  },
+  "homepage": "https://github.com/Yasira82/tec-auth#readme",
+  "bugs": {
+    "url": "https://github.com/Yasira82/tec-auth/issues"
+  },
   "private": false,
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
