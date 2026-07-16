@@ -197,8 +197,8 @@ npx vitest --coverage   # ≥ 80% — HARD BLOCK if below
 npm run type-check      # 0 errors
 npm run build           # clean dist/ output
 git status              # clean
-git fetch origin claude/ecommerce-engineering-review-EuiQO
-git rebase origin/claude/ecommerce-engineering-review-EuiQO
+git fetch origin main
+git rebase origin/main
 ```
 
 **Non-negotiable:** Zero coverage = zero ship.
@@ -208,7 +208,7 @@ git rebase origin/claude/ecommerce-engineering-review-EuiQO
 ## Platform Context
 
 Full platform context, ADR system, and engineering roadmap:
-→ `TEC_MODELS_PAT.prompt.yml` in yasira82/tec-app (branch: claude/ecommerce-engineering-review-EuiQO)
+→ `TEC_MODELS_PAT.prompt.yml` in yasira82/tec-app (branch: main)
 → `TEC_Ecosystem_AI_Key.prompt.yml` in yasira82/tec-app
 → C-47 Kernel Spec — P6 Fail Closed, Auth Invariants
 
