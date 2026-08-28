@@ -16,7 +16,18 @@ on:
 
 permissions:
   contents: read
-  id-token: write   # npm provenance (supply-chain attestation)
+  # NOTE: npm provenance (--provenance + id-token: write) is intentionally NOT
+  # used — this source repo is PRIVATE, and npm provenance only supports PUBLIC
+  # source repos (422 "Unsupported source repository visibility: private").
+  #
+  # This workflow DID request id-token and pass --provenance. It has not
+  # published since 2026-07-16, so the 422 was never hit: a trap armed for
+  # whoever ran the next release, who would have been staring at an
+  # authentication-shaped error that had nothing to do with the token.
+  #
+  # tec-ui and tec-sdk already carried this exact comment — they hit it and
+  # learned. This repo never back-adopted the lesson. Re-enable both only if
+  # this repo is made public.
 
 jobs:
   publish:
@@ -45,6 +56,6 @@ jobs:
             exit 0
           fi
           echo "📦 Publishing @yasser172/tec-auth@$CURRENT..."
-          npm publish --access public --provenance
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
