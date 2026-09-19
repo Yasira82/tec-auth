@@ -1,6 +1,6 @@
 {
   "name": "@yasser172/tec-auth",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "TEC Ecosystem — Shared Auth Layer (Pi SSO + JWT + Cookies + Middleware)",
   "repository": {
     "type": "git",
