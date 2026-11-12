@@ -82,7 +82,8 @@ login, logout, refresh, token issuance
 
 ```
 Hub.tecosystem.app login
-  → sets HttpOnly cookies: tec_access_token, tec_csrf, tec_user
+  → sets cookies: tec_access_token, tec_csrf, tec_user (readable by script by decision —
+    ADR-001; tec_refresh_token is the HttpOnly one)
   → all TEC apps read cookies (NEVER localStorage)
   → CSRF token required on all POST/PUT/DELETE BFF routes
 ```
@@ -179,7 +180,7 @@ tec-app, tec-ecommerce, tec-assets, tec-commerce
 ### SHARED — Platform defines, this package implements
 - Cookie names: `tec_access_token`, `tec_csrf`, `tec_user` — LOCKED, never rename
 - SSO redirect target: Hub ONLY — `hub.tecosystem.app/login?return_url=...`
-- Auth storage: HttpOnly cookies ONLY — never localStorage (ADR-001)
+- Auth storage: cookies ONLY — never localStorage. `tec_access_token` is not HttpOnly by decision (ADR-001)
 - Token validation: NEVER in this package — always via tec-auth-service
 
 ### SOVEREIGN — This package owns
